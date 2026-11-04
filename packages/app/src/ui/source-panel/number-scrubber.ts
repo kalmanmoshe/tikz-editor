@@ -1,3 +1,4 @@
+import { editorHost } from "../../embedding/host";
 import { requireArrayValue } from "@tikz-editor/core/utils/collections";
 import { syntaxTree } from "@codemirror/language";
 import { Annotation, type Extension } from "@codemirror/state";
@@ -219,7 +220,7 @@ export function numberScrubber(options: NumberScrubberOptions = {}): Extension {
           lastText: this.view.state.doc.sliceString(pending.target.from, pending.target.to)
         };
 
-        document.body.classList.add("is-scrubbing");
+        editorHost().classList.add("is-scrubbing");
         this.onScrubStateChange?.({
           isActive: true,
           from: this.active.from,
@@ -264,7 +265,7 @@ export function numberScrubber(options: NumberScrubberOptions = {}): Extension {
       private stopScrub(): void {
         if (this.active) {
           this.active = null;
-          document.body.classList.remove("is-scrubbing");
+          editorHost().classList.remove("is-scrubbing");
           this.onScrubStateChange?.({
             isActive: false,
             from: null,

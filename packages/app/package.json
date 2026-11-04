@@ -45,7 +45,12 @@
     "./presentation": {
       "types": "./src/presentation/index.ts",
       "import": "./src/presentation/index.ts"
-    }
+    },
+    "./embedding": {
+      "types": "./src/embedding/index.ts",
+      "import": "./src/embedding/index.ts"
+    },
+    "./embedding/styles.css": "./src/embedding/styles.css"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",

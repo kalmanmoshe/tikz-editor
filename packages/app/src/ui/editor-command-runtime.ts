@@ -5,7 +5,7 @@ import { documentKindForSource } from "../store/workspace-state";
 import type { DocumentKind } from "@tikz-editor/core/document/kind";
 import { parseDocumentRootId } from "@tikz-editor/core/document/root-id";
 import { APP_MENU_COMMAND_IDS, type AppMenuCommandId } from "../app-menu";
-import { getDockLayoutHandle } from "./DockLayout";
+import { getDockLayoutHandle } from "./dock-layout-handle";
 import { resolvePropertyTarget } from "@tikz-editor/core/edit/property-target";
 import type { EmitSvgResult } from "@tikz-editor/core/svg/index";
 import type { SessionSnapshot } from "../compute";

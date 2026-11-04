@@ -1,3 +1,4 @@
+import { editorHost, editorThemeRoot } from "../../embedding/host";
 import { useAfterCanvasPaint } from "../hooks/useAfterCanvasPaint";
 import { whenIdle } from "../frame-scheduling";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
@@ -857,7 +858,7 @@ export function SourcePanel() {
     formatterReflowLongOptions: s.settings.editor.formatterReflowLongOptions,
     formatterMaxLineLength: s.settings.editor.formatterMaxLineLength
   })));
-  const [darkMode, setDarkMode] = useState(() => document.documentElement.dataset.colorScheme === "dark");
+  const [darkMode, setDarkMode] = useState(() => editorThemeRoot().dataset.colorScheme === "dark");
 
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -1054,7 +1055,7 @@ export function SourcePanel() {
         highlightField,
         diagnosticsField,
         figureOverlayField,
-        tooltips({ parent: document.body }),
+        tooltips({ parent: editorHost() }),
         diagnosticTooltip,
         docsTooltip,
         sourceHoverBridge,
@@ -1109,9 +1110,9 @@ export function SourcePanel() {
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
-      setDarkMode(document.documentElement.dataset.colorScheme === "dark");
+      setDarkMode(editorThemeRoot().dataset.colorScheme === "dark");
     });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-color-scheme"] });
+    observer.observe(editorThemeRoot(), { attributes: true, attributeFilter: ["data-color-scheme"] });
     return () => { observer.disconnect(); };
   }, []);
 

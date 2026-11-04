@@ -1,3 +1,4 @@
+import { getDockLayoutHandle, setDockLayoutHandle } from "./dock-layout-handle";
 import { isRecord } from "../validation";
 import { Activity, Suspense, memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Layout, Model, Actions, DockLocation, TabSetNode, type IJsonModel, type TabNode } from "flexlayout-react";
@@ -378,7 +379,7 @@ export type DockLayoutHandle = {
 };
 
 // Module-level ref so editor commands can access the handle without prop drilling.
-let activeDockHandle: DockLayoutHandle | null = null;
+export { getDockLayoutHandle } from "./dock-layout-handle";
 
 /**
  * flexlayout keeps a tab mounted once shown. While another tab of its set is
@@ -436,9 +437,7 @@ const MemoObjectsPanel = memo(ObjectsPanel);
 const MemoStylesPanel = memo(StylesPanel);
 const MemoAssistantPanel = memo(AssistantPanel);
 
-export function getDockLayoutHandle(): DockLayoutHandle | null {
-  return activeDockHandle;
-}
+
 
 function createLayoutModel(json: unknown, kind: DocumentKind = "tikz"): { model: Model; recovered: boolean } {
   try {
@@ -573,10 +572,10 @@ function DocumentDockLayout({ repeatPreviewModel, onSubmitPrompt, onInterruptTur
   }), [kind]);
 
   useEffect(() => {
-    activeDockHandle = handle;
+    setDockLayoutHandle(handle);
     syncLayoutStateToStore(model, dispatch);
     return () => {
-      if (activeDockHandle === handle) activeDockHandle = null;
+      if (getDockLayoutHandle() === handle) setDockLayoutHandle(null);
     };
   }, [handle, model, dispatch]);
 

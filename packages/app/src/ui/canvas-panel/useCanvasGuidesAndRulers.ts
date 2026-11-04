@@ -1,3 +1,4 @@
+import { editorHost } from "../../embedding/host";
 import { useCallback, useMemo, type Dispatch, type MutableRefObject, type PointerEvent as ReactPointerEvent, type RefObject, type SetStateAction } from "react";
 import { viewportPoint as makeViewportPoint, clientPoint as makeClientPoint, px } from "@tikz-editor/core/coords/index";
 import {
@@ -274,7 +275,7 @@ export function useCanvasGuidesAndRulers(args: UseCanvasGuidesAndRulersArgs) {
           ? { orientation, value: guide.value, hideValue: value }
           : null
       );
-      document.body.classList.add(
+      editorHost().classList.add(
         orientation === "horizontal" ? "is-dragging-guide-horizontal" : "is-dragging-guide-vertical"
       );
       event.preventDefault();
@@ -307,7 +308,7 @@ export function useCanvasGuidesAndRulers(args: UseCanvasGuidesAndRulersArgs) {
         overDeleteZone: false
       };
       setGuidePreview(guide.overViewport ? { orientation: "horizontal", value: guide.value } : null);
-      document.body.classList.add("is-dragging-guide-horizontal");
+      editorHost().classList.add("is-dragging-guide-horizontal");
       event.preventDefault();
       event.stopPropagation();
     },
@@ -347,7 +348,7 @@ export function useCanvasGuidesAndRulers(args: UseCanvasGuidesAndRulersArgs) {
         overDeleteZone: false
       };
       setGuidePreview(guide.overViewport ? { orientation: "vertical", value: guide.value } : null);
-      document.body.classList.add("is-dragging-guide-vertical");
+      editorHost().classList.add("is-dragging-guide-vertical");
       event.preventDefault();
       event.stopPropagation();
     },

@@ -1,3 +1,4 @@
+import { editorHost } from "../embedding/host";
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -300,5 +301,5 @@ export function CanvasContextMenu({
     </div>
   );
 
-  return typeof document === "undefined" ? menu : createPortal(menu, document.body);
+  return typeof document === "undefined" ? menu : createPortal(menu, editorHost());
 }

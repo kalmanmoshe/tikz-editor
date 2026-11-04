@@ -1,3 +1,4 @@
+import { editorDocumentationEnabled } from "../../embedding/host";
 import { isRecord } from "../../validation";
 export type TikzDocEntryType = "key" | "command" | "style";
 
@@ -109,6 +110,7 @@ async function loadChunk(chunkName: string): Promise<DocChunk | null> {
 
 async function fetchJson(assetPath: string): Promise<unknown> {
   try {
+    if (!editorDocumentationEnabled()) return null;
     const base = resolveBaseUrl();
     const url = new URL(assetPath, base).toString();
     const response = await fetch(url);

@@ -1,3 +1,5 @@
+import { editorOwnsEvent } from "../../embedding/host";
+import { editorHost } from "../../embedding/host";
 import type { DeckActiveFrame } from "../../compute";
 import { requireArrayValue } from "@tikz-editor/core/utils/collections";
 import { deckPageDerived, DeckPageDerivedKey, deckObjectIndexKey, deckTextContextKey } from "../../deck-page-derived-cache";
@@ -154,7 +156,7 @@ import { useCanvasViewportPersistence } from "./useCanvasViewportPersistence";
 import { expandSvgViewBox } from "./viewport-view-box";
 import { useBucketFillPreview,type BucketPreviewSession } from "./useBucketFillPreview";
 import type { ClientPoint,SvgBounds,ViewportPoint,WorldPoint } from "../coords/types";
-import { getDockLayoutHandle } from "../DockLayout";
+import { getDockLayoutHandle } from "../dock-layout-handle";
 import { useEditorCommandRuntime,type CommandOrigin } from "../editor-command-runtime";
 import { isMacLikePlatform } from "../key-labels";
 import {
@@ -913,8 +915,8 @@ export const CanvasPanel = memo(function CanvasPanel({
       pendingTouchViewportRef.current = null;
     }
     guideDragRef.current = null;
-    document.body.classList.remove("is-dragging-guide-horizontal");
-    document.body.classList.remove("is-dragging-guide-vertical");
+    editorHost().classList.remove("is-dragging-guide-horizontal");
+    editorHost().classList.remove("is-dragging-guide-vertical");
 
     clearPendingNodePositionTargetPick();
     setPathDraft(null);
@@ -1316,6 +1318,7 @@ export const CanvasPanel = memo(function CanvasPanel({
       return;
     }
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (!editorOwnsEvent(event)) return;
       const isUndo =
         (event.ctrlKey || event.metaKey) &&
         !event.shiftKey &&
@@ -3125,7 +3128,7 @@ export const CanvasPanel = memo(function CanvasPanel({
       return;
     }
 
-    const body = document.body;
+    const body = editorHost();
     body.classList.remove(CANVAS_DRAG_CURSOR_LOCK_CLASS);
     body.style.removeProperty("--canvas-drag-cursor");
 

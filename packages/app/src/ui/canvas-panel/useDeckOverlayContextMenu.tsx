@@ -10,7 +10,7 @@ import { getActiveEditorPlatform } from "../../platform/current";
 import { useEditorStore } from "../../store/store";
 import { deckStepRootKey } from "../../root-key";
 import { CanvasContextMenu } from "../CanvasContextMenu";
-import { getDockLayoutHandle } from "../DockLayout";
+import { getDockLayoutHandle } from "../dock-layout-handle";
 import type { CommandBindings } from "../editor-command-runtime";
 import { clientToSvgPoint } from "./geometry";
 import type { HitRegion } from "./hit-regions";

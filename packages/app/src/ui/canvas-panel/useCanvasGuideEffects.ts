@@ -1,3 +1,4 @@
+import { editorHost } from "../../embedding/host";
 import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import { clientPoint as makeClientPoint, px } from "@tikz-editor/core/coords/index";
 import { addGuide, moveGuide, removeGuide } from "./panel-helpers";
@@ -36,8 +37,8 @@ export function useCanvasGuideEffects(args: UseCanvasGuideEffectsArgs) {
       }
       guideDragRef.current = null;
       setGuidePreview(null);
-      document.body.classList.remove("is-dragging-guide-horizontal");
-      document.body.classList.remove("is-dragging-guide-vertical");
+      editorHost().classList.remove("is-dragging-guide-horizontal");
+      editorHost().classList.remove("is-dragging-guide-vertical");
     }
 
     function onPointerMove(event: PointerEvent) {
@@ -134,7 +135,7 @@ export function useCanvasGuideEffects(args: UseCanvasGuideEffectsArgs) {
     }
     guideDragRef.current = null;
     setGuidePreview(null);
-    document.body.classList.remove("is-dragging-guide-horizontal");
-    document.body.classList.remove("is-dragging-guide-vertical");
+    editorHost().classList.remove("is-dragging-guide-horizontal");
+    editorHost().classList.remove("is-dragging-guide-vertical");
   }, [guideDragRef, setGuidePreview, showGuides]);
 }
