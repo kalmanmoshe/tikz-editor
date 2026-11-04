@@ -1,4 +1,4 @@
-import { editorHost } from "../embedding/host";
+import { editorOverlayRoot } from "../embedding/host";
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -36,13 +36,17 @@ function navigateMenu(event: ReactKeyboardEvent<HTMLDivElement>) {
 
 function positionSubmenu(element: HTMLDivElement) {
   const popup = element.querySelector<HTMLDivElement>(`.${css.submenuPopup}`);
-  if (!popup) return;
-  popup.style.left = ""; popup.style.right = ""; popup.style.top = "";
+  const ownerWindow = element.ownerDocument.defaultView;
+  if (!popup || !ownerWindow) return;
+  const trigger = element.getBoundingClientRect();
   const bounds = popup.getBoundingClientRect();
-  if (bounds.right > window.innerWidth - 4) {
-    popup.style.left = "auto"; popup.style.right = "calc(100% - 2px)";
-  }
-  if (bounds.bottom > window.innerHeight - 4) popup.style.top = `${-5 - (bounds.bottom - window.innerHeight + 4)}px`;
+  const padding = 4;
+  const right = element.ownerDocument.documentElement.clientWidth;
+  const bottom = element.ownerDocument.documentElement.clientHeight;
+  const preferredX = trigger.right + bounds.width - 2 <= right - padding
+    ? trigger.right - 2 : trigger.left - bounds.width + 2;
+  popup.style.left = `${Math.max(padding, Math.min(preferredX, right - bounds.width - padding))}px`;
+  popup.style.top = `${Math.max(padding, Math.min(trigger.top - 5, bottom - bounds.height - padding))}px`;
 }
 
 function ContextMenuPopup({
@@ -163,105 +167,76 @@ export function CanvasContextMenu({
   const [position, setPosition] = useState<ContextMenuAnchor>(anchor);
   const [inheritedStyle, setInheritedStyle] = useState<ContextMenuInheritedStyle>({});
 
-  // A layout effect, so it runs before the clamping below rather than undoing it after mount.
-  useLayoutEffect(() => {
-    if (!open) {
-      return;
-    }
-    setPosition((current) =>
-      current.x === anchor.x && current.y === anchor.y ? current : anchor
-    );
-  }, [anchor, open, target]);
+  const closeRef = useRef(onClose);
+  useLayoutEffect(() => { closeRef.current = onClose; }, [onClose]);
 
   useLayoutEffect(() => {
-    if (!open) {
-      return;
-    }
-
+    if (!open) return;
     const menuRoot = menuRootRef.current;
     const container = containerRef.current;
-    if (!menuRoot || !container) {
-      return;
-    }
+    const ownerWindow = menuRoot?.ownerDocument.defaultView;
+    if (!menuRoot || !container || !ownerWindow) return;
 
-    const nextPosition = clampContextMenuAnchor(
-      anchor,
-      {
-        width: menuRoot.offsetWidth,
-        height: menuRoot.offsetHeight
-      },
-      {
-        width: container.clientWidth,
-        height: container.clientHeight
-      }
-    );
+    const updatePosition = () => {
+      const containerRect = container.getBoundingClientRect();
+      const nextPosition = clampContextMenuAnchor(
+        { x: containerRect.left + anchor.x, y: containerRect.top + anchor.y },
+        { width: menuRoot.offsetWidth, height: menuRoot.offsetHeight },
+        { width: menuRoot.ownerDocument.documentElement.clientWidth,
+          height: menuRoot.ownerDocument.documentElement.clientHeight }
+      );
+      setPosition(current => current.x === nextPosition.x && current.y === nextPosition.y ? current : nextPosition);
+    };
+    updatePosition();
+    const observer = new ownerWindow.ResizeObserver(updatePosition);
+    observer.observe(menuRoot);
 
-    setPosition((current) =>
-      current.x === nextPosition.x && current.y === nextPosition.y
-        ? current
-        : nextPosition
-    );
-
-    const computedStyle = getComputedStyle(container);
+    const computedStyle = ownerWindow.getComputedStyle(container);
     const fontSize = computedStyle.getPropertyValue("--app-ui-font-size").trim();
     const scale = computedStyle.getPropertyValue("--app-ui-scale").trim();
     const nextInheritedStyle: ContextMenuInheritedStyle = {
       ...(fontSize ? { "--app-ui-font-size": fontSize } : {}),
       ...(scale ? { "--app-ui-scale": scale } : {})
     };
-    setInheritedStyle((current) =>
+    setInheritedStyle(current =>
       current["--app-ui-font-size"] === nextInheritedStyle["--app-ui-font-size"] &&
-      current["--app-ui-scale"] === nextInheritedStyle["--app-ui-scale"]
-        ? current
-        : nextInheritedStyle
+      current["--app-ui-scale"] === nextInheritedStyle["--app-ui-scale"] ? current : nextInheritedStyle
     );
-  }, [anchor, containerRef, open, target]);
+    return () => { observer.disconnect(); };
+  }, [anchor.x, anchor.y, containerRef, open, target]);
 
   useEffect(() => {
-    if (open) menuRootRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+    if (open) menuRootRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus({ preventScroll: true });
   }, [open]);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    function onPointerDown(event: PointerEvent) {
-      const targetNode = event.target instanceof Node ? event.target : null;
-      if (!targetNode) {
-        return;
-      }
-      if (!menuRootRef.current?.contains(targetNode)) {
-        onClose();
-      }
-    }
-
-    window.addEventListener("pointerdown", onPointerDown);
-    return () => { window.removeEventListener("pointerdown", onPointerDown); };
-  }, [onClose, open]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
+    const menuRoot = menuRootRef.current;
+    const ownerDocument = menuRoot?.ownerDocument;
+    const ownerWindow = ownerDocument?.defaultView;
+    if (!open || !menuRoot || !ownerDocument || !ownerWindow) return;
+    const close = () => { closeRef.current(); };
+    const outsideMenu = (event: Event) => !event.composedPath().includes(menuRoot);
+    const onPointerDown = (event: PointerEvent) => { if (outsideMenu(event)) close(); };
+    const onScroll = (event: Event) => { if (outsideMenu(event)) close(); };
+    const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault(); event.stopPropagation();
-        onClose();
-        containerRef.current?.focus();
+        close(); containerRef.current?.focus({ preventScroll: true });
       }
-    }
-
-    window.addEventListener("keydown", onKeyDown, true);
-    window.addEventListener("blur", onClose);
-    window.addEventListener("resize", onClose);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown, true);
-      window.removeEventListener("blur", onClose);
-      window.removeEventListener("resize", onClose);
     };
-  }, [containerRef, onClose, open]);
+    ownerDocument.addEventListener("pointerdown", onPointerDown);
+    ownerDocument.addEventListener("scroll", onScroll, true);
+    ownerWindow.addEventListener("keydown", onKeyDown, true);
+    ownerWindow.addEventListener("blur", close);
+    ownerWindow.addEventListener("resize", close);
+    return () => {
+      ownerDocument.removeEventListener("pointerdown", onPointerDown);
+      ownerDocument.removeEventListener("scroll", onScroll, true);
+      ownerWindow.removeEventListener("keydown", onKeyDown, true);
+      ownerWindow.removeEventListener("blur", close);
+      ownerWindow.removeEventListener("resize", close);
+    };
+  }, [containerRef, open]);
 
   if (!open) {
     return null;
@@ -269,22 +244,19 @@ export function CanvasContextMenu({
 
   const items = definition[target];
 
-  const containerRect = containerRef.current?.getBoundingClientRect();
-  const viewportPosition = containerRect
-    ? {
-        x: containerRect.left + position.x,
-        y: containerRect.top + position.y
-      }
-    : position;
   const menu = (
     <div
       ref={menuRootRef}
       className={css.root}
       style={{
         ...inheritedStyle,
-        left: `${viewportPosition.x}px`,
-        top: `${viewportPosition.y}px`
+        left: `${position.x}px`,
+        top: `${position.y}px`
       }}
+      onPointerDown={event => { event.stopPropagation(); }}
+      onPointerMove={event => { event.stopPropagation(); }}
+      onClick={event => { event.stopPropagation(); }}
+      onContextMenu={event => { event.preventDefault(); event.stopPropagation(); }}
       role="menu"
       data-testid="canvas-context-menu"
     >
@@ -301,5 +273,5 @@ export function CanvasContextMenu({
     </div>
   );
 
-  return typeof document === "undefined" ? menu : createPortal(menu, editorHost());
+  return typeof document === "undefined" ? menu : createPortal(menu, editorOverlayRoot());
 }

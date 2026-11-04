@@ -1,6 +1,8 @@
 /** Optional DOM boundary for embedding the editor in an existing application. */
 export interface EditorHostOptions {
   root: HTMLElement;
+  /** Optional popup container outside transformed or clipped editor ancestors. */
+  overlayRoot?: HTMLElement;
   /** Hosts without the upstream documentation assets can disable their lookup. */
   documentationEnabled?: boolean;
 }
@@ -9,6 +11,7 @@ let host: EditorHostOptions | null = null;
 
 export function setEditorHost(options: EditorHostOptions | null): void { host = options; }
 export function editorHost(): HTMLElement { return host?.root ?? document.body; }
+export function editorOverlayRoot(): HTMLElement { return host?.overlayRoot ?? host?.root ?? document.body; }
 export function editorThemeRoot(): HTMLElement { return host?.root ?? document.documentElement; }
 export function editorDocumentationEnabled(): boolean { return host?.documentationEnabled ?? true; }
 export function editorActiveElement(): Element | null {

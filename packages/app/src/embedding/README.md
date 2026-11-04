@@ -30,6 +30,10 @@ to the supplied element. Without an embedded session, the original document
 defaults apply. Hosts without the upstream documentation assets can explicitly
 set `documentationEnabled: false`; the default remains enabled.
 
+For embedded panes with transformed or clipped ancestors, supply a separate
+`host.overlayRoot` outside those ancestors for canvas context menus. The host
+owns its styling, theme and removal; popup coordinates use its document viewport.
+
 Session setup does not mount React, choose tools, set a theme, define a default
 document, access a clipboard, save files or define application commands. Those
 are consumer responsibilities. Consumers also own CSS containment and layout.
