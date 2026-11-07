@@ -1,4 +1,4 @@
-import { editorHost } from "../embedding/host";
+import { editorOverlayRoot } from "../embedding/host";
 import {
   useCallback,
   useLayoutEffect,
@@ -177,7 +177,7 @@ export function RenderedTooltip({
       >
         {content}
       </div>,
-      editorHost()
+      editorOverlayRoot()
     )
     : null;
 

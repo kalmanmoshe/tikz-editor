@@ -1,3 +1,4 @@
+import { editorOverlayRoot } from "../embedding/host";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import css from "./CustomDropdown.module.css";
@@ -358,7 +359,7 @@ export function CustomDropdown<TValue extends string>({
             })}
           </div>
         </div>,
-        document.body
+        editorOverlayRoot()
       ) : null}
     </div>
   );

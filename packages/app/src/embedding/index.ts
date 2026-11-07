@@ -12,3 +12,5 @@ export type { EditorPlatform } from "../platform/types";
 export type { ToolMode } from "../store/types";
 export { sourceEditorHistoryFor } from "./source-history";
 export type { SourceEditorHistory } from "./source-history";
+
+export { InspectorPanel } from "../ui/inspector-panel/InspectorPanel";

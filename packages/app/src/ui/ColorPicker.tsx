@@ -1,3 +1,5 @@
+import { createPortal } from "react-dom";
+import { editorOverlayRoot } from "../embedding/host";
 import { requireArrayValue } from "@tikz-editor/core/utils/collections";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { hexToRgb, rgbToHex } from "@tikz-editor/core/utils/color-convert";
@@ -82,6 +84,7 @@ export function ColorPickerField({
   onChange
 }: ColorPickerProps) {
   const [open, setOpen] = useState(false);
+  const [popoverPosition, setPopoverPosition] = useState({ left: 0, top: 0 });
   const [popoverPlacement, setPopoverPlacement] = useState<PopoverPlacement>("down");
   const [popoverHorizontalPlacement, setPopoverHorizontalPlacement] = useState<PopoverHorizontalPlacement>("start");
   const [popoverMaxHeight, setPopoverMaxHeight] = useState<number>(POPOVER_MAX_HEIGHT_PX);
@@ -115,7 +118,7 @@ export function ColorPickerField({
       if (!target) {
         return;
       }
-      if (!rootRef.current?.contains(target)) {
+      if (!rootRef.current?.contains(target) && !popoverRef.current?.contains(target)) {
         setOpen(false);
       }
     }
@@ -175,6 +178,11 @@ export function ColorPickerField({
         Math.max(POPOVER_MIN_HEIGHT_PX, Math.floor(availableSpace))
       );
 
+      const left = Math.max(8, Math.min(
+        nextHorizontalPlacement === "end" ? rootRect.right - popoverWidth : rootRect.left,
+        window.innerWidth - popoverWidth - 8));
+      const top = nextPlacement === "up" ? rootRect.top - POPOVER_GAP_PX : rootRect.bottom + POPOVER_GAP_PX;
+      setPopoverPosition(current => current.left === left && current.top === top ? current : { left, top });
       setPopoverPlacement((current) => (current === nextPlacement ? current : nextPlacement));
       setPopoverHorizontalPlacement((current) =>
         current === nextHorizontalPlacement ? current : nextHorizontalPlacement
@@ -232,7 +240,7 @@ export function ColorPickerField({
           </svg>
         </span>
       </button>
-      {open ? (
+      {open ? createPortal(
         <div
           className={[
             css.popover,
@@ -240,7 +248,10 @@ export function ColorPickerField({
             popoverHorizontalPlacement === "end" ? css.popoverEnd : ""
           ].filter(Boolean).join(" ")}
           ref={popoverRef}
-          style={{ maxHeight: `${popoverMaxHeight}px` }}
+          style={{ position: "fixed", left: popoverPosition.left, right: "auto",
+            top: popoverPlacement === "up" ? "auto" : popoverPosition.top,
+            bottom: popoverPlacement === "up" ? window.innerHeight - popoverPosition.top : "auto",
+            maxHeight: `${popoverMaxHeight}px` }}
         >
           <ColorPicker
             ariaLabel={ariaLabel}
@@ -264,7 +275,8 @@ export function ColorPickerField({
               {resetLabel}
             </button>
           ) : null}
-        </div>
+        </div>,
+        editorOverlayRoot()
       ) : null}
     </div>
   );
