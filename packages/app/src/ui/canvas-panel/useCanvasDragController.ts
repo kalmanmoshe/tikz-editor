@@ -1,3 +1,4 @@
+import { recognizeFreehand } from "./freehand-recognition";
 import { requireArrayValue } from "@tikz-editor/core/utils/collections";
 import { canContinueDocumentEdit, restoreDocumentEdit, trackDocumentEdit } from "../../edit-session";
 import { useEditorStore } from "../../store/store";
@@ -158,6 +159,11 @@ export function useCanvasDragController(params: UseCanvasDragControllerParams) {
     creationFillColor,
     onSnapFeedback
   } = params;
+  const recognitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recognitionPointerRef = useRef<WorldPoint | null>(null);
+  useEffect(() => () => {
+    if (recognitionTimerRef.current) clearTimeout(recognitionTimerRef.current);
+  }, []);
   const wasSnappedRef = useRef(false);
   const worldListenersRef = useRef<CanvasWorldListeners | null>(null);
   const moveQueueRef = useRef<ReturnType<typeof createFrameEditQueue<DragState, PointerEvent>> | null>(null);
@@ -589,6 +595,35 @@ export function useCanvasDragController(params: UseCanvasDragControllerParams) {
         const nextWorldPoints = appendFreehandSamplePoint(world);
         if (nextWorldPoints) {
           drag.points = nextWorldPoints;
+        }
+        const zoom = useEditorStore.getState().canvasTransform.scale;
+        const previous = recognitionPointerRef.current;
+        if (!previous || distanceSquared(previous, world) * zoom * zoom > 9) {
+          recognitionPointerRef.current = world;
+          if (recognitionTimerRef.current) clearTimeout(recognitionTimerRef.current);
+          recognitionTimerRef.current = setTimeout(() => {
+            recognitionTimerRef.current = null;
+            recognitionPointerRef.current = null;
+            if (dragRef.current !== drag) return;
+            const recognized = recognizeFreehand(drag.points, zoom);
+            if (!recognized) return;
+            queueSelectionForAddedElement(recognized.at);
+            const result = applyActionWithFeedback(recognized.kind === "polygon"
+              ? { kind: "addPath", start: recognized.at, closed: true,
+                  segments: recognized.vertices.slice(1).map(to => ({ kind: "line" as const, to })),
+                  strokeColor: creationStrokeColor }
+              : { kind: "addElement", at: recognized.at,
+                  template: { ...recognized.template, strokeColor: creationStrokeColor } });
+            if (!result.sourceChanged) {
+              pendingAddedSelectionRef.current = null;
+              return;
+            }
+            setFreehandDraft?.(null);
+            setDragState(null);
+            setToolCursorWorld(null);
+            setSnapLines([]);
+            dispatch({ type: "SET_TOOL_MODE", mode: "select" });
+          }, 800);
         }
         setToolCursorWorld(world);
         setSnapLines([]);
@@ -1350,6 +1385,9 @@ export function useCanvasDragController(params: UseCanvasDragControllerParams) {
       }
 
       if (drag.kind === "tool-freehand") {
+        if (recognitionTimerRef.current) clearTimeout(recognitionTimerRef.current);
+        recognitionTimerRef.current = null;
+        recognitionPointerRef.current = null;
         setNodeAnchorOverlay(null);
         setDragTooltip(null);
         let nextWorldPoints: WorldPoint[] | null = null;
@@ -1444,6 +1482,7 @@ export function useCanvasDragController(params: UseCanvasDragControllerParams) {
       }
     };
   }, [
+    setFreehandDraft,
     applyActionWithFeedback,
     cancelGesture,
     creationFillColor,
