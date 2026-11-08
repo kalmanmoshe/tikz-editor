@@ -543,6 +543,11 @@ export function buildCanvasContextMenuDefinition(
       { kind: "separator" },
       {
         kind: "command",
+        commandId: APP_MENU_COMMAND_IDS.TOGGLE_INFINITE_CANVAS,
+        label: "Infinite canvas"
+      },
+      {
+        kind: "command",
         commandId: APP_MENU_COMMAND_IDS.TOGGLE_GRID,
         label: "Grid"
       },
