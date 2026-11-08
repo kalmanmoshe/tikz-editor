@@ -1079,6 +1079,26 @@ export function useCanvasToolInteractions(args: UseCanvasToolInteractionsArgs) {
 
   const onInteractionPointerUp = useCallback(
     (event: ReactPointerEvent<SVGSVGElement>) => {
+      const drag = dragRef.current;
+      if (event.type !== "pointercancel" && drag?.kind === "tool-create" &&
+          drag.toolMode === "addLine" && drag.pointerId === event.pointerId) {
+        const world = svgResult && clientToWorldPoint(
+          makeClientPoint(px(event.clientX), px(event.clientY)), interactionSvgRef.current, svgResult.viewBox);
+        if (world && distanceSquared(world, drag.startWorld) * canvasTransform.scale ** 2 <= 16) {
+          setDragState(null);
+          setToolDraft(null);
+          setPathDraft(createPathToolDraft(drag.startWorld, undefined, drag.startEndpointAnchor ? {
+            nodeName: drag.startEndpointAnchor.nodeName,
+            ...(drag.startEndpointAnchor.nodeSourceId !== undefined ? { nodeSourceId: drag.startEndpointAnchor.nodeSourceId } : {}),
+            anchor: drag.startEndpointAnchor.anchor
+          } : undefined));
+          setSnapLines([]);
+          setDragTooltip(null);
+          dispatch({ type: "SET_TOOL_MODE", mode: "addPath" });
+          event.preventDefault();
+          return;
+        }
+      }
       if (toolMode === "magnify") {
         const magnifier = magnifierState;
         if (magnifier?.pointerId === event.pointerId) {
@@ -1098,6 +1118,7 @@ export function useCanvasToolInteractions(args: UseCanvasToolInteractionsArgs) {
       finalizePendingTouchViewportTap(event.pointerId);
     },
     [
+      canvasTransform.scale, dispatch, dragRef, interactionSvgRef, setDragState, setDragTooltip, setPathDraft, setToolDraft, svgResult,
       finalizePendingTouchViewportTap,
       magnifierState,
       setDragCursorLock,
