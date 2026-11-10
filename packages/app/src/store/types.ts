@@ -406,6 +406,10 @@ export type EditorState = {
   snapDebug: DeveloperSnapDebugState | null;
 };
 
+export type CanvasPreferences = Pick<WorkspaceEphemeralState,
+  "canvasViewPreferences" | "showDocumentBounds" | "showGuides" | "showTransparencyGrid" | "snapModes"
+>;
+
 export type EditorAction =
   // Document
   | { type: "CODE_EDITED"; source: string }
@@ -554,6 +558,7 @@ export type EditorAction =
   | { type: "SET_DECK_BUILD_SELECTION"; selection: DeckBuildSelection | null }
   | { type: "SET_DECK_STEP"; rootId: string; step: number }
   | { type: "SET_DECK_OBJECT_SELECTION"; frameId: string; objectId: string | null }
+  | { type: "SET_CANVAS_VIEW_PREFERENCES"; preferences: CanvasPreferences }
   | { type: "TOGGLE_CANVAS_AID"; aid: CanvasAid }
   | { type: "TOGGLE_SNAP_MODE"; mode: SnapMode }
   | { type: "REQUEST_FIT_TO_CONTENT" }

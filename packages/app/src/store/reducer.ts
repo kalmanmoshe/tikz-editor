@@ -1577,6 +1577,12 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       break;
     }
 
+    case "SET_CANVAS_VIEW_PREFERENCES": {
+      const { canvasViewPreferences, showDocumentBounds, showGuides, showTransparencyGrid, snapModes } = action.preferences;
+      ui = { ...ui, canvasViewPreferences, showDocumentBounds, showGuides, showTransparencyGrid, snapModes };
+      break;
+    }
+
     case "TOGGLE_CANVAS_AID":
       if (action.aid === "grid" || action.aid === "rulers") {
         const kind = state.documentKind;
